@@ -1,0 +1,11 @@
+start: (literal)*
+literal: "(" typedecl "->" (ATOM | seq) ")"
+typedecl: "`" CNAME ("<" meta ("," meta)* ">")? "`"
+meta: SIGNED_NUMBER | typedecl
+
+seq: "@" ATOM? ("~" ATOM)* "@"
+ATOM: SIGNED_NUMBER
+%import common.CNAME
+%import common.SIGNED_NUMBER
+%import common.WS
+%ignore WS
