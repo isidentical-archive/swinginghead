@@ -1,7 +1,7 @@
 # Swinging Head Language (SHL)
 SHL is a !(easy-to-write, easy-to-understand) language that is backed by LLVM.
 ## Binding
-```
+```py
 from swinginghead.compiler import Binder
 
 binder = Binder(<code>)

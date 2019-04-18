@@ -41,10 +41,3 @@ class Binder:
 
     def __getattr__(self, attr):
         return self.engine.get_function_address(attr)
-    
-if __name__ == '__main__':
-    import sys
-    import ctypes
-    binder = Binder.from_file(*sys.argv[1:])
-    cfunc = ctypes.CFUNCTYPE(ctypes.c_float, ctypes.c_float, ctypes.c_float)(binder.head)
-    print(cfunc(3.0, 4.0))

@@ -2,7 +2,6 @@ import llvmlite.ir as ir
 from ast import literal_eval
 from lark import Transformer
 from swinginghead.parser.pgen import get_parser
-from swinginghead.parser.elm import elmer
 from dataclasses import dataclass
 from typing import Callable, Sequence, Optional, Union, Any
 
@@ -145,20 +144,3 @@ class Compiler(Transformer):
 
             new_args.append(arg)
         return new_args
-
-
-if __name__ == "__main__":
-    parser = get_parser()
-    compiler = Compiler()
-    tree = parser.parse(
-    """
-    swing `float` $`float`€`float`$
-    head {
-        ,1 f+ (`float`->3.35)
-        res eqs ,1 f+ ,2
-        ./ ,res
-    }
-    """
-    )
-    result = compiler.compile(tree)
-    print(result)
