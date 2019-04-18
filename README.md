@@ -1,5 +1,17 @@
 # Swinging Head Language (SHL)
 SHL is a !(easy-to-write, easy-to-understand) language that is backed by LLVM.
+## Binding
+```
+from swinginghead.compiler import Binder
+
+binder = Binder(<code>)
+binder.<func_name> => pointer to your function
+
+binder = Binder.from_file('examples/demo.shl')
+cfunc = ctypes.CFUNCTYPE(ctypes.c_float, ctypes.c_float, ctypes.c_float)(binder.head)
+assert cfunc(3.0, 4.0) == 12.0
+```
+
 ## Types
 ```
 `type(<meta>)?`

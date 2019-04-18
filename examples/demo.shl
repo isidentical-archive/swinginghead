@@ -1,6 +1,6 @@
 swing `float` $`float`€`float`$
 head {
     ,1 f+ (`float`->3.35)
-    res eqs ,1 f+ ,2
+    res eqs ,1 f* ,2
     ./ ,res
 }

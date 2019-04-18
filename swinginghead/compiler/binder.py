@@ -7,18 +7,22 @@ llvm.initialize_native_target()
 llvm.initialize_native_asmprinter() 
 
 class Binder:
-    def __init__(self, file):
+    def __init__(self, code):
         parser = get_parser()
         compiler = Compiler()
-        with open(file) as f:
-            tree = parser.parse(f.read())
         
+        tree = parser.parse(code)
         self.ir = str(compiler.compile(tree))
     
         self.engine = self.get_engine()
         self.mod = self.compile_ir(self.ir)
         
-            
+    @classmethod
+    def from_file(cls, file):
+        with open(file) as f:
+            code = f.read()
+        return cls(code)
+        
     def compile_ir(self, llvm_ir):
         mod = llvm.parse_assembly(llvm_ir)
         mod.verify()
@@ -41,6 +45,6 @@ class Binder:
 if __name__ == '__main__':
     import sys
     import ctypes
-    binder = Binder(*sys.argv[1:])
+    binder = Binder.from_file(*sys.argv[1:])
     cfunc = ctypes.CFUNCTYPE(ctypes.c_float, ctypes.c_float, ctypes.c_float)(binder.head)
     print(cfunc(3.0, 4.0))
