@@ -1,15 +1,24 @@
 start: (expr)*
-?expr: pointer | literal | funcdecl
+?expr: pointer | literal | funcdecl | operation | local_name | equality | returns
 
-funcdecl: "swing" typedecl "$" typedecl? ("€" typedecl)* "$"
+equality: CNAME "eqs" (operation | literal) 
+operation: expr OPERATOR expr
+returns: "./" expr
+
+funcdecl: functypedecl CNAME "{" (expr)* "}"
+functypedecl: "swing" typedecl "$" typedecl? ("€" typedecl)* "$"
 
 pointer: "<-" literal
-literal: "(" typedecl "->" (ATOM | seq) ")"
+literal: ("(" typedecl "->" (ATOM | seq) ")")
+local_name: "," (SIGNED_NUMBER | CNAME)
+
 typedecl: "`" CNAME ("<" meta ("," meta)* ">")? "`"
 meta: SIGNED_NUMBER | typedecl
 
 seq: "@" ATOM? ("~" ATOM)* "@"
 ATOM: SIGNED_NUMBER | "void"
+OPERATOR: ("f")? ("+" | "-" | "*" | "/")
+
 %import common.CNAME
 %import common.SIGNED_NUMBER
 %import common.WS
