@@ -7,12 +7,18 @@ from swinginghead.parser.elm import elmer
 
 class Compiler(Transformer):
     def start(self, tokens):
-        print(tokens)
+        return tokens
 
+    def pointer(self, tokens):
+        return ir.PointerType(tokens.pop())
+        
     def literal(self, tokens):
         vmtype, value = tokens
         if isinstance(vmtype, (ir.VectorType, ir.Aggregate)):
             return vmtype([literal_eval(token.value) for token in value.children])
+        elif isinstance(vmtype, ir.VoidType):
+            return vmtype
+            
         return vmtype(literal_eval(value))
 
     def typedecl(self, tokens):
@@ -42,8 +48,11 @@ if __name__ == "__main__":
     (`int<32>`->15)
     (`int<64>`->323443)
     (`float`->3.35)
-    (`vector<`int<32>`, 4>`->@32~44~55~66@)
+    (`void`->0)
     (`array<`int<32>`, 4>`->@32~44~55~66@)
+    <-(`float`->3.35)
     """
     )
-    compiler.compile(tree)
+    result = compiler.compile(tree)
+    from pprint import pprint
+    pprint(result)
