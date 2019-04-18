@@ -1,5 +1,8 @@
 start: (expr)*
-?expr: pointer | literal
+?expr: pointer | literal | funcdecl
+
+funcdecl: "swing" typedecl "$" typedecl? ("€" typedecl)* "$"
+
 pointer: "<-" literal
 literal: "(" typedecl "->" (ATOM | seq) ")"
 typedecl: "`" CNAME ("<" meta ("," meta)* ">")? "`"

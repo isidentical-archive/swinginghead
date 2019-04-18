@@ -34,6 +34,9 @@ class Compiler(Transformer):
             vmtype = vmtype()
 
         return vmtype
+        
+    def funcdecl(self, tokens):
+        return ir.FunctionType(tokens.pop(0), tokens)
 
     def compile(self, tree):
         nodes = self.transform(tree)
@@ -51,6 +54,7 @@ if __name__ == "__main__":
     (`void`->0)
     (`array<`int<32>`, 4>`->@32~44~55~66@)
     <-(`float`->3.35)
+    swing `float` $`int<64>`€`float`$
     """
     )
     result = compiler.compile(tree)
