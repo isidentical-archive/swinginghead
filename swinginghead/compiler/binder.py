@@ -4,25 +4,26 @@ from swinginghead.parser.pgen import get_parser
 
 llvm.initialize()
 llvm.initialize_native_target()
-llvm.initialize_native_asmprinter() 
+llvm.initialize_native_asmprinter()
+
 
 class Binder:
     def __init__(self, code):
         parser = get_parser()
         compiler = Compiler()
-        
+
         tree = parser.parse(code)
         self.ir = str(compiler.compile(tree))
-    
+
         self.engine = self.get_engine()
         self.mod = self.compile_ir(self.ir)
-        
+
     @classmethod
     def from_file(cls, file):
         with open(file) as f:
             code = f.read()
         return cls(code)
-        
+
     def compile_ir(self, llvm_ir):
         mod = llvm.parse_assembly(llvm_ir)
         mod.verify()

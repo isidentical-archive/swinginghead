@@ -14,10 +14,13 @@ class Name:
 
 @dataclass
 class Operation:
-    ope: Callable
+    ope: str
     args: Sequence
-
-
+@dataclass
+class Comparison:
+    ope: str
+    args: Sequence
+    
 @dataclass
 class Equality:
     name: Name
@@ -28,12 +31,18 @@ class Equality:
 class Return:
     value: Any
 
+class Custom:
+    def register(self, instr):
+        self.content.append(instr)
+
 @dataclass
-class NewBlocker:
-    name: str
+class IfDecl(Custom):
+    comp: Comparison
+    content: Sequence
+
 
 OP_MAP = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
-
+CMP_MAP = {"gt": ">", "lt": "<", "ge": ">=", "le": "<=", "eq": "==", "ne": "!="}
 
 class Compiler(Transformer):
     def __init__(self, *args, **kwargs):
@@ -78,16 +87,15 @@ class Compiler(Transformer):
         name = str(name)
         func = ir.Function(self.module, vmtype, name=name)
         block = func.append_basic_block(name="entry")
+        builder = ir.IRBuilder(block)
         for statement in statements:
-            if isinstance(statement, NewBlocker):
-                block = func.append_basic_block(name=statement.name)
-                
-            builder = ir.IRBuilder(block)
-            if not isinstance(statement, type(None)): # control for non dispatchable
-                self.dispatch(func, builder, statement)
+            self.dispatch(func, builder, statement)
 
         return func
 
+    def ifdecl(self, tokens):
+        return IfDecl(tokens.pop(0), tokens)
+        
     def operation(self, tokens):
         lhs, op, rhs = tokens
         if len(op) > 1:
@@ -96,7 +104,13 @@ class Compiler(Transformer):
             op = OP_MAP[op]
 
         return Operation(op, (lhs, rhs))
-
+    
+    def comparison(self, tokens):
+        lhs, comp, rhs = tokens
+        comp = comp.split(" ")
+        op = f"{comp.pop(0)}cmp_{comp.pop(0)}"
+        return Comparison(op, [*comp, lhs, rhs])
+        
     def equality(self, tokens):
         name, value = tokens
         name = Name(name)
@@ -116,9 +130,18 @@ class Compiler(Transformer):
         self.transform(tree)
         return self.module
 
+    def ifdecl_builder(self, func, builder, statement):
+        pred = self.dispatch(func, builder, statement.comp)
+        with builder.if_then(pred) as then:
+            for stmt in statement.content:
+                self.dispatch(func, builder, stmt)
+        
     def operation_builder(self, func, builder, statement):
         return getattr(builder, statement.ope)(*self.arg_parser(func, statement.args))
 
+    def comparison_builder(self, func, builder, statement):
+        return getattr(builder, statement.ope)(CMP_MAP[statement.args.pop(0)], *self.arg_parser(func, statement.args))
+        
     def equality_builder(self, func, builder, statement):
         val = self.dispatch(func, builder, statement.value)
         val.name = statement.name.arg
