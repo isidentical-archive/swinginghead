@@ -5,52 +5,56 @@ from swinginghead.parser.pgen import get_parser
 from swinginghead.parser.elm import elmer
 from dataclasses import dataclass
 from typing import Callable, Sequence, Optional, Union, Any
-    
+
+
 @dataclass
 class Name:
     arg: Union[str, int]
     nam: bool = False
-    
+
+
 @dataclass
 class Operation:
     ope: Callable
     args: Sequence
+
 
 @dataclass
 class Equality:
     name: Name
     value: Any
 
+
 @dataclass
 class Return:
     value: Any
-    
-OP_MAP = {
-    '+': 'add',
-    '-': 'sub',
-    '*': 'mul',
-    '/': 'div'
-}
+
+@dataclass
+class NewBlocker:
+    name: str
+
+OP_MAP = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
+
 
 class Compiler(Transformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.module = ir.Module(name='<swinginghead>')
+        self.module = ir.Module(name="<swinginghead>")
         self._reg_map = {}
-        
+
     def start(self, tokens):
         return tokens
 
     def pointer(self, tokens):
         return ir.PointerType(tokens.pop())
-        
+
     def literal(self, tokens):
         vmtype, value = tokens
         if isinstance(vmtype, (ir.VectorType, ir.Aggregate)):
             return vmtype([literal_eval(token.value) for token in value.children])
         elif isinstance(vmtype, ir.VoidType):
             return vmtype
-            
+
         return vmtype(literal_eval(value))
 
     def typedecl(self, tokens):
@@ -66,49 +70,53 @@ class Compiler(Transformer):
             vmtype = vmtype()
 
         return vmtype
-        
+
     def functypedecl(self, tokens):
         return ir.FunctionType(tokens.pop(0), tokens)
 
     def funcdecl(self, tokens):
         vmtype, name, *statements = tokens
+        name = str(name)
         func = ir.Function(self.module, vmtype, name=name)
+        block = func.append_basic_block(name="entry")
         for statement in statements:
-            block = func.append_basic_block()
+            if isinstance(statement, NewBlocker):
+                block = func.append_basic_block(name=statement.name)
+                
             builder = ir.IRBuilder(block)
-            if not isinstance(statement, type(None)):
+            if not isinstance(statement, type(None)): # control for non dispatchable
                 self.dispatch(func, builder, statement)
-            
-        print(func)
-    
+
+        return func
+
     def operation(self, tokens):
         lhs, op, rhs = tokens
         if len(op) > 1:
             op = f"{op[0]}{OP_MAP[op[1]]}"
         else:
             op = OP_MAP[op]
-        
+
         return Operation(op, (lhs, rhs))
-    
+
     def equality(self, tokens):
         name, value = tokens
         name = Name(name)
         return Equality(name, value)
-        
+
     def returns(self, tokens):
         return Return(tokens.pop())
-        
+
     def local_name(self, tokens):
         name = tokens.pop()
         if name.isdigit():
             return Name(int(name) - 1)
         else:
             return Name(name, True)
-            
+
     def compile(self, tree):
-        nodes = self.transform(tree)
-        return nodes
-    
+        self.transform(tree)
+        return self.module
+
     def operation_builder(self, func, builder, statement):
         return getattr(builder, statement.ope)(*self.arg_parser(func, statement.args))
 
@@ -117,14 +125,15 @@ class Compiler(Transformer):
         val.name = statement.name.arg
         self._reg_map[val.name] = val
         return val
-        
+
     def return_builder(self, func, builder, statement):
         builder.ret(*self.arg_parser(func, (statement.value,)))
-                
-        
+
     def dispatch(self, func, builder, statement):
-        return getattr(self, f"{statement.__class__.__name__.lower()}_builder")(func, builder, statement)
-        
+        return getattr(self, f"{statement.__class__.__name__.lower()}_builder")(
+            func, builder, statement
+        )
+
     def arg_parser(self, func, args):
         new_args = []
         for arg in args:
@@ -133,23 +142,18 @@ class Compiler(Transformer):
                     arg = self._reg_map[arg.arg]
                 else:
                     arg = func.args[arg.arg]
-            
+
             new_args.append(arg)
         return new_args
-        
+
+
 if __name__ == "__main__":
     parser = get_parser()
     compiler = Compiler()
     tree = parser.parse(
     """
-    (`int<32>`->15)
-    (`int<64>`->323443)
-    (`float`->3.35)
-    (`void`->0)
-    (`array<`int<32>`, 4>`->@32~44~55~66@)
-    <-(`float`->3.35)
     swing `float` $`float`€`float`$
-    add {
+    head {
         ,1 f+ (`float`->3.35)
         res eqs ,1 f+ ,2
         ./ ,res
@@ -157,5 +161,4 @@ if __name__ == "__main__":
     """
     )
     result = compiler.compile(tree)
-    from pprint import pprint
-    pprint(result)
+    print(result)
