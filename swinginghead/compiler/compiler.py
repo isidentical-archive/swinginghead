@@ -1,11 +1,14 @@
-import llvmlite.ir as ir
 from ast import literal_eval
-from lark import Transformer, Token
-from swinginghead.parser.pgen import get_parser
-from dataclasses import dataclass, field
-from typing import Callable, Sequence, Optional, Union, Any
-from itertools import groupby
 from contextlib import nullcontext
+from dataclasses import dataclass, field
+from itertools import groupby
+from typing import Any, Callable, Optional, Sequence, Union
+
+import llvmlite.ir as ir
+from lark import Token, Transformer
+
+from swinginghead.parser.pgen import get_parser
+
 
 @dataclass
 class Name:
@@ -17,11 +20,14 @@ class Name:
 class Operation:
     ope: str
     args: Sequence
+
+
 @dataclass
 class Comparison:
     ope: str
     args: Sequence
-    
+
+
 @dataclass
 class Equality:
     name: Name
@@ -32,9 +38,11 @@ class Equality:
 class Return:
     value: Any
 
+
 class Custom:
     def register(self, instr):
         self.content.append(instr)
+
 
 @dataclass
 class IfDecl(Custom):
@@ -46,11 +54,14 @@ class IfDecl(Custom):
 OP_MAP = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
 CMP_MAP = {"gt": ">", "lt": "<", "ge": ">=", "le": "<=", "eq": "==", "ne": "!="}
 
+
 class Compiler(Transformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.module = ir.Module(name="<swinginghead>")
         self._reg_map = {}
+        self._fun_types = {}
+        self._last_fun_ann = None
 
     def start(self, tokens):
         return tokens
@@ -86,6 +97,7 @@ class Compiler(Transformer):
 
     def funcdecl(self, tokens):
         vmtype, name, *statements = tokens
+        self._fun_types[name] = vmtype
         name = str(name)
         func = ir.Function(self.module, vmtype, name=name)
         block = func.append_basic_block(name="entry")
@@ -100,7 +112,7 @@ class Compiler(Transformer):
         ifsuite = tokens.pop(0).children
         elsesuite = [] if len(tokens) < 1 else tokens.pop(0).children
         return IfDecl(comp, ifsuite, elsesuite)
-        
+
     def operation(self, tokens):
         lhs, op, rhs = tokens
         if len(op) > 1:
@@ -109,13 +121,13 @@ class Compiler(Transformer):
             op = OP_MAP[op]
 
         return Operation(op, (lhs, rhs))
-    
+
     def comparison(self, tokens):
         lhs, comp, rhs = tokens
         comp = comp.split(" ")
         op = f"{comp.pop(0)}cmp_{comp.pop(0)}"
         return Comparison(op, [*comp, lhs, rhs])
-        
+
     def equality(self, tokens):
         name, value = tokens
         name = Name(name)
@@ -141,17 +153,19 @@ class Compiler(Transformer):
             with then:
                 for stmt in statement.content:
                     self.dispatch(func, builder, stmt)
-                    
+
             with otherwise:
                 for stmt in statement.elsecontent:
                     self.dispatch(func, builder, stmt)
-                
+
     def operation_builder(self, func, builder, statement):
         return getattr(builder, statement.ope)(*self.arg_parser(func, statement.args))
 
     def comparison_builder(self, func, builder, statement):
-        return getattr(builder, statement.ope)(CMP_MAP[statement.args.pop(0)], *self.arg_parser(func, statement.args))
-        
+        return getattr(builder, statement.ope)(
+            CMP_MAP[statement.args.pop(0)], *self.arg_parser(func, statement.args)
+        )
+
     def equality_builder(self, func, builder, statement):
         val = self.dispatch(func, builder, statement.value)
         val.name = statement.name.arg

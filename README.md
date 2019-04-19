@@ -5,11 +5,10 @@ SHL is a !(easy-to-write, easy-to-understand) language that is backed by LLVM.
 from swinginghead.compiler import Binder
 
 binder = Binder(<code>)
-binder.<func_name> => pointer to your function
+binder.<func_name> => your function
 
 binder = Binder.from_file('examples/demo.shl')
-cfunc = ctypes.CFUNCTYPE(ctypes.c_float, ctypes.c_float, ctypes.c_float)(binder.head)
-assert cfunc(3.0, 4.0) == 12.0
+assert binder.head(3.0, 4.0) == 5.0
 ```
 
 ## Types
@@ -33,7 +32,40 @@ assert cfunc(3.0, 4.0) == 12.0
 <-<value>
 <-(`float`->3.35)
 ```
-## Functions
+## Control Flow Graphs
+### Comparison
+```
+| expr ">" <comp prefix><comp type><comperator> "<" expr | 
+
+,1 >f ordered gt< ,2
+```
+### If / Then
+```
+comp "=>" {
+    exprs*
+}
+
+|,1 >f ordered gt< ,2| => {
+    ./ (`float`->2.0)
+}
+```
+### If / Then / Else
+```
+comp "=>" {
+    exprs*
+}
+"!=>" {
+    exprs*
+}
+
+|,1 >f ordered gt< ,2| => {
+    ./ (`float`->2.0)
+}
+!=> {
+    ./ (`float`->5.0)
+}
+```
+# Functions
 ### Func Type
 ```
 swing <return> $<arg1>€....€<argn>$

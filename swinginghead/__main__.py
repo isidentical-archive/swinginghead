@@ -1,6 +1,7 @@
-from swinginghead.compiler import Binder
 from code import InteractiveConsole
 from ctypes import *
+
+from swinginghead.compiler import Binder
 
 
 def main(file):
