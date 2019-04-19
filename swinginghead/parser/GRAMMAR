@@ -22,7 +22,7 @@ meta: SIGNED_NUMBER | typedecl
 
 seq: "@" ATOM? ("~" ATOM)* "@"
 ATOM: SIGNED_NUMBER | "void"
-OPERATOR: ("f")? ("+" | "-" | "*" | "/")
+OPERATOR: ("f" | "a" | "l")? ("+" | "-" | "*" | "/" | ">>" | "<<")
 COMPARATOR: ("i" | "f") " " ("signed" | "unsigned" | "ordered" | "unordered") " " ("lt" | "gt" | "eq" | "ge" | "le" | "ne")
 END: ";"
 

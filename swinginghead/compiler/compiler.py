@@ -51,7 +51,7 @@ class IfDecl(Custom):
     elsecontent: Sequence
 
 
-OP_MAP = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
+OP_MAP = {"+": "add", "-": "sub", "*": "mul", "/": "div", "<<": "shl", ">>": "shr"}
 CMP_MAP = {"gt": ">", "lt": "<", "ge": ">=", "le": "<=", "eq": "==", "ne": "!="}
 
 
@@ -115,8 +115,8 @@ class Compiler(Transformer):
 
     def operation(self, tokens):
         lhs, op, rhs = tokens
-        if len(op) > 1:
-            op = f"{op[0]}{OP_MAP[op[1]]}"
+        if len(op) > 1 and op[0].isalpha():
+            op = f"{op[0]}{OP_MAP[op[1:]]}"
         else:
             op = OP_MAP[op]
 

@@ -3,6 +3,6 @@ from ctypes import *
     
 def demo():
     demo = Binder.from_file('demo.shl')
-    print(demo.head(5.0, 4.0))
+    print(demo.head(5, 4))
     
 demo()

@@ -1,10 +1,5 @@
-swing `float` $`float`€`float`$
+swing `int<32>` $`int<32>`€`int<32>`$
 head {
-    |,1 >f ordered gt< ,2| => {
-        ./ (`float`->2.0)
-    }
-    !=> {
-        ./ (`float`->5.0)
-    }
-    ./ ,2
+    res eqs ,1 l>> ,2
+    ./ ,res
 }
