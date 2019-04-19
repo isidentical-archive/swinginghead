@@ -1,10 +1,11 @@
 import llvmlite.ir as ir
 from ast import literal_eval
-from lark import Transformer
+from lark import Transformer, Token
 from swinginghead.parser.pgen import get_parser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Sequence, Optional, Union, Any
-
+from itertools import groupby
+from contextlib import nullcontext
 
 @dataclass
 class Name:
@@ -39,6 +40,7 @@ class Custom:
 class IfDecl(Custom):
     comp: Comparison
     content: Sequence
+    elsecontent: Sequence
 
 
 OP_MAP = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
@@ -94,7 +96,10 @@ class Compiler(Transformer):
         return func
 
     def ifdecl(self, tokens):
-        return IfDecl(tokens.pop(0), tokens)
+        comp = tokens.pop(0)
+        ifsuite = tokens.pop(0).children
+        elsesuite = [] if len(tokens) < 1 else tokens.pop(0).children
+        return IfDecl(comp, ifsuite, elsesuite)
         
     def operation(self, tokens):
         lhs, op, rhs = tokens
@@ -132,10 +137,15 @@ class Compiler(Transformer):
 
     def ifdecl_builder(self, func, builder, statement):
         pred = self.dispatch(func, builder, statement.comp)
-        with builder.if_then(pred) as then:
-            for stmt in statement.content:
-                self.dispatch(func, builder, stmt)
-        
+        with builder.if_else(pred) as (then, otherwise):
+            with then:
+                for stmt in statement.content:
+                    self.dispatch(func, builder, stmt)
+                    
+            with otherwise:
+                for stmt in statement.elsecontent:
+                    self.dispatch(func, builder, stmt)
+                
     def operation_builder(self, func, builder, statement):
         return getattr(builder, statement.ope)(*self.arg_parser(func, statement.args))
 

@@ -7,8 +7,9 @@ comparison: expr ">" COMPARATOR "<" expr
 
 returns: "./" expr
 
-ifdecl: "|" comparison "|" "=>" "{" (expr)* "}"
- 
+ifdecl: "|" comparison "|" "=>"  suite ["!=>" suite]
+suite:  "{" (expr)* "}"
+
 funcdecl: functypedecl CNAME "{" (expr)* "}"
 functypedecl: "swing" typedecl "$" typedecl? ("€" typedecl)* "$"
 
@@ -23,6 +24,7 @@ seq: "@" ATOM? ("~" ATOM)* "@"
 ATOM: SIGNED_NUMBER | "void"
 OPERATOR: ("f")? ("+" | "-" | "*" | "/")
 COMPARATOR: ("i" | "f") " " ("signed" | "unsigned" | "ordered" | "unordered") " " ("lt" | "gt" | "eq" | "ge" | "le" | "ne")
+END: ";"
 
 %import common.CNAME
 %import common.SIGNED_NUMBER

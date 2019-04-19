@@ -1,7 +1,11 @@
 swing `float` $`float`€`float`$
 head {
     |,1 >f ordered gt< ,2| => {
-        ./ ,1
+        ./ (`float`->2.0)
+    }
+    !=> {
+        ./ (`float`->5.0)
     }
     ./ ,2
 }
+
