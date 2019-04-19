@@ -8,7 +8,7 @@ with open(current_dir / "README.md", encoding="utf-8") as f:
     
 setup(
     name="shl",
-    version="0.1",
+    version="0.2",
     packages=find_packages(),
     url="https://github.com/btaskaya/swinginghead",
     description = "Swinging Head Language",
